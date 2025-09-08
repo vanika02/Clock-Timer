@@ -35,12 +35,17 @@ lbl = tk.Label(root, font=('calibri', 40, 'bold'), background='black', foregroun
 lbl.pack(anchor='center', fill='x')
 digital_Clock()
 
+timer_running = False
+timer_id = None
 
 def timer_completed():
+    global timer_running
+    timer_running = False
     pygame.mixer.init()
     pygame.mixer.music.load("alarm.wav")
     pygame.mixer.music.play()
-    messagebox.showerror("Done", "Time is completed")
+    enable_buttons()
+    messagebox.showinfo("Done", "Time is completed")
     time.sleep(6) # time sleep for 3 seconds
     pygame.mixer.music.stop()
     pygame.quit()
@@ -49,21 +54,60 @@ def timer_completed():
 input_Value = tk.Entry(root)
 input_Value.pack(padx=20, pady=20, ipadx=10, ipady=10, fill='x')
 
-print(time.time())
-def get_input_value():
+
+
+def get_input_value(unit):
+    global timer_id, timer_running
+    if timer_running:
+        messagebox.showerror("Timer running", "Please wait until the time is finished or stop it to start a new one")
+        return
+    # disable buttons when the timer starts
+    disable_buttons()
+
     Value = input_Value.get()
     try:
         num = int(Value)
     except ValueError:
         messagebox.showerror("Invalid input", "Please enter a valid integer.")
 
-    num_sec = (num * 1000)
+    if unit == "seconds":
+        num_sec = (num * 1000)
+    elif unit == "minutes":
+        num_sec = (num * 60 * 1000)
+    elif unit == "hours":
+        num_sec = (num * 60 * 60 * 1000 )
 
-    root.after(num_sec, timer_completed)
+    timer_running = True
+    timer_id = root.after(num_sec, timer_completed)
 
+def stop_timer():
+    global timer_running, timer_id
+    if timer_running and timer_id:
+        root.after_cancel(timer_id)
+        timer_running=False
+        enable_buttons() # re enable all the buttons
+        messagebox.showinfo("stopped", "Timer stopped before completion")
 
-input_Value_button = tk.Button(root, text="ENTER TIME IN SECONDS", command=get_input_value, width=20, height=2).pack(padx=5, pady=5, ipadx=10, ipady=10, fill='x') 
+def disable_buttons():
+    button_1.config(state="disabled")
+    button_2.config(state="disabled")
+    button_3.config(state="disabled")
 
+def enable_buttons():
+    button_1.config(state="normal")
+    button_2.config(state="normal")
+    button_3.config(state="normal")
+
+frame = tk.Frame(root)
+frame.pack()
+button_1 = tk.Button(frame, text="SECONDS", command=lambda:get_input_value("seconds"), width=18, height=2, bg="green", fg="White")
+button_1.grid(row=1, column = 0, padx=5, pady=2)
+button_2 = tk.Button(frame, text="MINUTES", command=lambda:get_input_value("minutes"), width=18, height=2, bg="green", fg="White")
+button_2.grid(row=1, column = 1, padx=5, pady=5) 
+button_3 = tk.Button(frame, text="HOURS", command=lambda:get_input_value("hours"), width=18, height=2, bg="green", fg="White")
+button_3.grid(row=1, column = 2, padx=5, pady=5)
+stop_button = tk.Button(root, text="STOP", command=stop_timer, bg="red", fg="white", width=18, height=2)
+stop_button.pack(pady=10, padx=10, fill='x')
 
 
 
